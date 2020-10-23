@@ -62,8 +62,8 @@ def main():
             headers, body = contents.split(NULL, 1)
             file_info = parse_body(body)
             # sort by name
-            for info in sorted(file_info, key=lambda x: x[1]):
-                print(info[1])
+            for mode, name, sha in sorted(file_info, key=lambda x: x[1]):
+                print(name)
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
