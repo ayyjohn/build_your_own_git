@@ -43,7 +43,7 @@ def main():
         object_dir.mkdir(exist_ok=True)
         with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{output_file_name}", "wb") as blob:
             blob.write(compressed_data)
-        print(blob_hash, end="")
+        print(blob_hash.hexdigest(), end="")
     elif command == "ls-tree":
         # format is `git ls-tree --name-only <tree_sha>`
         # thus argv[2] will always be "--name-only" for now
