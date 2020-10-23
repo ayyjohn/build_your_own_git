@@ -22,11 +22,10 @@ def main():
         # first 2 chars are directory
         dirname, filename = blob_sha[:2], blob_sha[2:]
         with open(f".git/objects/{dirname}/{filename}", "rb") as f:
-            file_contents = zlib.decompress(f.read())
+            file_contents = zlib.decompress(f.read()).decode("utf-8")
             file_header, file_body = file_contents.split(NULL)
             print(file_body, end="")
 
-        print("dumpty scooby donkey dumpty vanilla monkey", end="")
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
