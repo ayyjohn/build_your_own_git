@@ -5,7 +5,7 @@ import zlib
 from pathlib import Path
 
 GIT_DIR = ".git"
-ROOT_PATH = "/Users/alecjohnson/Desktop/code/python/codecrafters_git/tmp/testing"
+ROOT_PATH = os.path.abspath(os.getcwd())
 OBJECTS_DIR = f"{GIT_DIR}/objects"
 REFS_DIR = f"{GIT_DIR}/refs"
 HEAD_FILE = f"{GIT_DIR}/HEAD"
