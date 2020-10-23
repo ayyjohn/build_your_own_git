@@ -2,6 +2,12 @@ import hashlib
 import os
 import sys
 import zlib
+from pathlib import Path
+
+GIT_DIR = ".git"
+OBJECTS_DIR = f"{GIT_DIR}/objects"
+REFS_DIR = f"{GIT_DIR}/refs"
+HEAD_FILE = f"{GIT_DIR}/HEAD"
 
 NULL = b"\x00"
 UTF8 = "utf-8"
@@ -19,7 +25,7 @@ def main():
         blob_hash = sys.argv[3]
         # first 2 chars are directory, rest is filename
         dirname, filename = blob_hash[:2], blob_hash[2:]
-        with open(f".git/objects/{dirname}/{filename}", "rb") as f:
+        with open(f"{OBJECTS_DIR}/{dirname}/{filename}", "rb") as f:
             file_contents = zlib.decompress(f.read())
             file_header, file_body = file_contents.split(NULL)
             decoded_file_header = decode(file_header)
@@ -36,8 +42,9 @@ def main():
             sha.update(contents)
             blob_hash = sha.hexdigest()
             dirname, filename = blob_hash[:2], blob_hash[2:]
-            os.mkdir(f".git/objects/{dirname}")
-            with open(f".git/objects/{dirname}/{filename}", "wb") as blob:
+            object_dir = Path(f"{OBJECTS_DIR}/{dirname}")
+            object_dir.mkdir(exist_ok=True)
+            with open(f"{OBJECTS_DIR}/{dirname}/{filename}", "wb") as blob:
                 blob.write(zlib.compress(contents))
             print(blob_hash, end="")
     else:
@@ -49,13 +56,14 @@ def decode(b):
 
 
 def create_git_dirs():
-    os.mkdir(".git")
-    os.mkdir(".git/objects")
-    os.mkdir(".git/refs")
+    objects = Path(OBJECTS_DIR)
+    objects.mkdir(parents=True, exist_ok=True)
+    refs = Path(REFS_DIR)
+    refs.mkdir(exist_ok=True)
 
 
 def create_head_file():
-    with open(".git/HEAD", "w") as f:
+    with open(HEAD_FILE, "w") as f:
         f.write("ref: refs/heads/master\n")
 
 
