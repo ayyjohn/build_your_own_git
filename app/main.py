@@ -37,7 +37,7 @@ def main():
         # thus argv[2] will always be "-w" for now
         input_file_name = sys.argv[3]
         blob_hash, compressed_data = hash_and_compress_file(input_file_name)
-        dir_name, output_file_name = get_dir_and_file_names_from_hash(blob_hash)
+        dir_name, output_file_name = get_dir_and_file_names_from_hash(blob_hash.hexdigest())
 
         object_dir = Path(f"{OBJECTS_DIR}/{dir_name}")
         object_dir.mkdir(exist_ok=True)
