@@ -9,11 +9,8 @@ UTF8 = "utf-8"
 def main():
     command = sys.argv[1]
     if command == "init":
-        os.mkdir(".git")
-        os.mkdir(".git/objects")
-        os.mkdir(".git/refs")
-        with open(".git/HEAD", "w") as f:
-            f.write("ref: refs/heads/master\n")
+        create_git_dirs()
+        create_head_file()
         print("Initialized git directory")
     elif command == "cat-file":
         # format is `git catfile -p 0a5e5a61944bc3228ba609690585a9b52b1e31b7`
@@ -34,6 +31,14 @@ def main():
 def decode(b):
     return b.decode(UTF8)
 
+def create_git_dirs():
+    os.mkdir(".git")
+    os.mkdir(".git/objects")
+    os.mkdir(".git/refs")
+
+def create_head_file
+    with open(".git/HEAD", "w") as f:
+        f.write("ref: refs/heads/master\n")
 
 if __name__ == "__main__":
     main()
