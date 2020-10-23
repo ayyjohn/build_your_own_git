@@ -37,6 +37,7 @@ def main():
         input_file_name = sys.argv[3]
         blob_hash = hash_file(input_file_name)
         dirname, output_file_name = get_dir_and_file_names_from_hash(blob_hash)
+
         object_dir = Path(f"{OBJECTS_DIR}/{dirname}")
         object_dir.mkdir(exist_ok=True)
         with open(f"{OBJECTS_DIR}/{dirname}/{output_file_name}", "wb") as blob:
