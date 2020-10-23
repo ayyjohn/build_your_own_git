@@ -29,15 +29,16 @@ def main():
         # format is `git hash-object -w filename`
         # thus argv[2] will always be "-w" for now
         file_name = sys.argv[3]
-        with open(file_name, "r") as f:
-            contents = "blob " + f"{os.stat(file_name).st_size}" + "\x00" + f.read()
+        with open(file_name, "rb") as f:
+            contents = b"blob " + bytes(os.stat(file_name).st_size) + b"\x00" + f.read()
             sha = hashlib.sha1()
-            blob_hash = sha.update(contents)
+            sha.update(contents)
+            blob_hash = sha.hexdigest()
             dirname, filename = blob_hash[:2], blob_hash[2:]
             os.mkdir(f".git/objects/{dirname}")
             with open(f".git/objects/{dirname}/{filename}", "wb") as blob:
                 blob.write(zlib.compress(contents))
-            print(blob_hash, len(blob_hash))
+            print(blob_hash)
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
