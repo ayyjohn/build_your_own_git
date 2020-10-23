@@ -66,7 +66,8 @@ def main():
             for mode, name, sha in sorted(file_info, key=lambda x: x[1]):
                 print(name)
     elif command == "write-tree":
-        write_tree(ROOT_PATH, ROOT_PATH, {})
+        tree_hash = write_tree(ROOT_PATH, ROOT_PATH, {})
+        print(tree_hash)
         # format is `git write-tree`
     else:
         raise RuntimeError(f"Unknown command #{command}")
@@ -100,6 +101,7 @@ def write_tree(current_path, root_path, tree_hashes):
     tree_hashes[subdir] = tree_hash
     with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{file_name}", "wb+") as tree_file:
         tree_file.write(content)
+    return tree_hash
 
 
 def parse_body(body):
