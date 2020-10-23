@@ -37,7 +37,7 @@ def main():
         file_name = sys.argv[3]
         with open(file_name, "rb") as f:
             data = f.read()
-            contents = b"blob " + str(len(data)).encode(UTF8) + b"\x00" + data
+            contents = b"blob " + str(len(data)).encode(UTF8) + NULL + data
             sha = hashlib.sha1()
             sha.update(contents)
             blob_hash = sha.hexdigest()
