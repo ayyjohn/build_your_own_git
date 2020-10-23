@@ -30,7 +30,8 @@ def main():
         # thus argv[2] will always be "-w" for now
         file_name = sys.argv[3]
         with open(file_name, "rb") as f:
-            contents = b"blob " + bytes(os.stat(file_name).st_size) + b"\x00" + f.read()
+            data = f.read()
+            contents = b"blob " + str(len(data)).encode(UTF8) + b"\x00" + data
             sha = hashlib.sha1()
             sha.update(contents)
             blob_hash = sha.hexdigest()
@@ -38,7 +39,7 @@ def main():
             os.mkdir(f".git/objects/{dirname}")
             with open(f".git/objects/{dirname}/{filename}", "wb") as blob:
                 blob.write(zlib.compress(contents))
-            print(blob_hash)
+            print(blob_hash, end="")
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
