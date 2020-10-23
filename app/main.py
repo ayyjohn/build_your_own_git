@@ -83,25 +83,25 @@ def write_tree(current_path, root_path, tree_hashes):
         write_tree(subdir + os.sep + dir, root_path, tree_hashes)
         dir_mode = os.stat(subdir + os.sep + dir).st_mode
         tree_hash = tree_hashes[subdir + os.sep + dir]
-        entry = (encode(str(dir_mode)), encode(dir), encode(tree_hash))
+        entry = (encode(str(dir_mode)), encode(dir), tree_hash)
         entries.append(entry)
     for file_name in files:
         file_path = subdir + os.sep + file_name
         blob_hash, compressed_data = hash_and_compress_file(file_path)
         file_mode = os.stat(file_path).st_mode
-        entry = (encode(str(file_mode)), encode(file_name), encode(blob_hash))
+        entry = (encode(str(file_mode)), encode(file_name), blob_hash.digest())
         entries.append(entry)
-    joined_entries = [mode + b" " + name + NULL + sha for name, mode, sha in entries]
+    joined_entries = [mode + b" " + name + NULL + sha for mode, name, sha in entries]
     body = b"".join(joined_entries)
     content = b"tree " + encode(str(len(body))) + NULL + body
     tree_hash = hash_data(content)
-    dir_name, file_name = get_dir_and_file_names_from_hash(tree_hash)
+    dir_name, file_name = get_dir_and_file_names_from_hash(tree_hash.hexdigest())
     object_dir = Path(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}")
     object_dir.mkdir(exist_ok=True)
-    tree_hashes[subdir] = tree_hash
+    tree_hashes[subdir] = tree_hash.digest()
     with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{file_name}", "wb+") as tree_file:
-        tree_file.write(content)
-    return tree_hash
+        tree_file.write(zlib.compress(content))
+    return tree_hash.hexdigest()
 
 
 def parse_body(body):
@@ -144,7 +144,7 @@ def hash_and_compress_file(file_name):
 def hash_data(data):
     sha = hashlib.sha1()
     sha.update(data)
-    return sha.hexdigest()
+    return sha
 
 
 def get_dir_and_file_names_from_hash(blob_hash):
