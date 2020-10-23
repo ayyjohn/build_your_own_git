@@ -12,7 +12,7 @@ def main():
             f.write("ref: refs/heads/master\n")
         print("Initialized git directory")
     elif command == "cat-file":
-        print("yeet")
+        print("dumpty scooby donkey dumpty vanilla monkey", end="")
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
