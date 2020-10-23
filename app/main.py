@@ -29,7 +29,7 @@ def main():
         # format is `git hash-object -w filename`
         # thus argv[2] will always be "-w" for now
         file_name = sys.argv[3]
-        with open(file_name, "rb") as f:
+        with open(file_name, "r") as f:
             contents = "blob " + f"{os.stat(file_name).st_size}" + "\x00" + f.read()
             sha = hashlib.sha1()
             blob_hash = sha.update(contents)
