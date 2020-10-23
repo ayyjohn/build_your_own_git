@@ -2,7 +2,7 @@ import os
 import sys
 import zlib
 
-NULL = "x\00"
+NULL = b"\x00"
 
 
 def main():
@@ -22,8 +22,10 @@ def main():
         # first 2 chars are directory
         dirname, filename = blob_sha[:2], blob_sha[2:]
         with open(f".git/objects/{dirname}/{filename}", "rb") as f:
-            file_contents = zlib.decompress(f.read()).decode("utf-8")
+            file_contents = zlib.decompress(f.read())
             file_header, file_body = file_contents.split(NULL)
+            file_header = file_header.decode("utf-8")
+            file_body = file_body.decode("utf-8")
             print(file_body, end="")
 
     else:
