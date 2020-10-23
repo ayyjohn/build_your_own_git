@@ -43,8 +43,49 @@ def main():
         with open(f"{OBJECTS_DIR}/{dirname}/{output_file_name}", "wb") as blob:
             blob.write(compressed_data)
         print(blob_hash, end="")
+    elif command == "ls-tree":
+        # format is `git ls-tree --name-only <tree_sha>`
+        # thus argv[2] will always be "--name-only" for now
+        """
+        output should get just the names from this
+        100644 blob c18dd8d83ceed1806b50b0aaa46beb7e335fff13    .gitignore
+        100644 blob 4be0fbf52cf36629e048c5cb692d57231df07f14    README.md
+        040000 tree 4742c33faa9e076e80313be7b4f3bfd42e5a60b9    app
+        100644 blob a7343766b507bf56012c2bfbc9f0e1601013be6a    codecrafters.yml
+        100755 blob 79eae6a5419dca2d5494200c12143638e9ecb393    your_git.sh
+
+        """
+        tree_sha = sys.argv[3]
+        dirname, filename = get_dir_and_file_names_from_hash(tree_sha)
+        with open(f"{OBJECTS_DIR}/{dirname}/{filename}", "rb") as tree_file:
+            contents = zlib.decompress(tree_file.read())
+            headers, body = contents.split(NULL, 1)
+            file_info = parse_body(body)
+            # sort by name
+            for info in sorted(file_info, key=lambda x: x[1]):
+                print(info[1])
     else:
         raise RuntimeError(f"Unknown command #{command}")
+
+
+def parse_body(body):
+    """
+    body is of the form
+    {mode} {name}\x00{hash}{mode} {name}\x00{hash}{mode} {name}\x00{hash}{mode}...
+    where the hash is always 20 bytes
+    """
+    entries = []
+    while body:
+        first_space_index = body.index(b" ")
+        first_null_index = body.index(NULL)
+        mode = body[0:first_space_index]
+        name = body[first_space_index + 1 : first_null_index]
+        end_of_sha_index = first_null_index + 21
+        sha = body[first_null_index:end_of_sha_index]
+        entry = (decode(mode), decode(name), sha.hex())
+        entries.append(entry)
+        body = body[end_of_sha_index:]
+    return entries
 
 
 def decode(b):
