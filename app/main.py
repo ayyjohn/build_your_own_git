@@ -3,8 +3,6 @@ import sys
 
 
 def main():
-    print("Your code goes here!")
-
     command = sys.argv[1]
     if command == "init":
         os.mkdir(".git")
