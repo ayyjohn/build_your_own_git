@@ -45,14 +45,17 @@ def main():
 def decode(b):
     return b.decode(UTF8)
 
+
 def create_git_dirs():
     os.mkdir(".git")
     os.mkdir(".git/objects")
     os.mkdir(".git/refs")
 
-def create_head_file
+
+def create_head_file():
     with open(".git/HEAD", "w") as f:
         f.write("ref: refs/heads/master\n")
+
 
 if __name__ == "__main__":
     main()
