@@ -24,7 +24,7 @@ def main():
         # thus argv[2] will always be "-p" for now
         blob_hash = sys.argv[3]
         # first 2 chars are directory, rest is filename
-        dirname, filename = blob_hash[:2], blob_hash[2:]
+        dirname, filename = get_dir_and_file_names_from_hash(blob_hash)
         with open(f"{OBJECTS_DIR}/{dirname}/{filename}", "rb") as f:
             file_contents = zlib.decompress(f.read())
             file_header, file_body = file_contents.split(NULL)
@@ -41,7 +41,7 @@ def main():
             sha = hashlib.sha1()
             sha.update(contents)
             blob_hash = sha.hexdigest()
-            dirname, filename = blob_hash[:2], blob_hash[2:]
+            dirname, filename = get_dir_and_file_names_from_hash(blob_hash)
             object_dir = Path(f"{OBJECTS_DIR}/{dirname}")
             object_dir.mkdir(exist_ok=True)
             with open(f"{OBJECTS_DIR}/{dirname}/{filename}", "wb") as blob:
@@ -53,6 +53,10 @@ def main():
 
 def decode(b):
     return b.decode(UTF8)
+
+
+def get_dir_and_file_names_from_hash(blob_hash):
+    return blob_hash[:2], blob_hash[2:]
 
 
 def create_git_dirs():
