@@ -5,6 +5,7 @@ import zlib
 from pathlib import Path
 
 GIT_DIR = ".git"
+ROOT_PATH = "/Users/alecjohnson/Desktop/code/python/codecrafters_git/tmp/testing"
 OBJECTS_DIR = f"{GIT_DIR}/objects"
 REFS_DIR = f"{GIT_DIR}/refs"
 HEAD_FILE = f"{GIT_DIR}/HEAD"
@@ -23,24 +24,24 @@ def main():
         # format is `git catfile -p 0a5e5a61944bc3228ba609690585a9b52b1e31b7`
         # thus argv[2] will always be "-p" for now
         blob_hash = sys.argv[3]
-        # first 2 chars are directory, rest is filename
-        dirname, filename = get_dir_and_file_names_from_hash(blob_hash)
-        with open(f"{OBJECTS_DIR}/{dirname}/{filename}", "rb") as f:
+        # first 2 chars are directory, rest is file_name
+        dir_name, file_name = get_dir_and_file_names_from_hash(blob_hash)
+        with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{file_name}", "rb") as f:
             file_contents = zlib.decompress(f.read())
             file_header, file_body = file_contents.split(NULL)
             decoded_file_header = decode(file_header)
             decoded_file_body = decode(file_body)
             print(decoded_file_body, end="")
     elif command == "hash-object":
-        # format is `git hash-object -w filename`
+        # format is `git hash-object -w file_name`
         # thus argv[2] will always be "-w" for now
         input_file_name = sys.argv[3]
         blob_hash, compressed_data = hash_and_compress_file(input_file_name)
-        dirname, output_file_name = get_dir_and_file_names_from_hash(blob_hash)
+        dir_name, output_file_name = get_dir_and_file_names_from_hash(blob_hash)
 
-        object_dir = Path(f"{OBJECTS_DIR}/{dirname}")
+        object_dir = Path(f"{OBJECTS_DIR}/{dir_name}")
         object_dir.mkdir(exist_ok=True)
-        with open(f"{OBJECTS_DIR}/{dirname}/{output_file_name}", "wb") as blob:
+        with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{output_file_name}", "wb") as blob:
             blob.write(compressed_data)
         print(blob_hash, end="")
     elif command == "ls-tree":
@@ -56,16 +57,49 @@ def main():
 
         """
         tree_sha = sys.argv[3]
-        dirname, filename = get_dir_and_file_names_from_hash(tree_sha)
-        with open(f"{OBJECTS_DIR}/{dirname}/{filename}", "rb") as tree_file:
+        dir_name, file_name = get_dir_and_file_names_from_hash(tree_sha)
+        with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{file_name}", "rb") as tree_file:
             contents = zlib.decompress(tree_file.read())
             headers, body = contents.split(NULL, 1)
             file_info = parse_body(body)
             # sort by name
             for mode, name, sha in sorted(file_info, key=lambda x: x[1]):
                 print(name)
+    elif command == "write-tree":
+        write_tree(ROOT_PATH, ROOT_PATH, {})
+        # format is `git write-tree`
     else:
         raise RuntimeError(f"Unknown command #{command}")
+
+
+def write_tree(current_path, root_path, tree_hashes):
+    # let's start by assuming there's exactly one file in the current dir
+    subdir, dirs, files = next(os.walk(current_path))
+    entries = []
+    for dir in dirs:
+        if ".git" in dir:
+            continue
+        write_tree(subdir + os.sep + dir, root_path, tree_hashes)
+        dir_mode = os.stat(subdir + os.sep + dir).st_mode
+        tree_hash = tree_hashes[subdir + os.sep + dir]
+        entry = (encode(str(dir_mode)), encode(dir), encode(tree_hash))
+        entries.append(entry)
+    for file_name in files:
+        file_path = subdir + os.sep + file_name
+        blob_hash, compressed_data = hash_and_compress_file(file_path)
+        file_mode = os.stat(file_path).st_mode
+        entry = (encode(str(file_mode)), encode(file_name), encode(blob_hash))
+        entries.append(entry)
+    joined_entries = [mode + b" " + name + NULL + sha for name, mode, sha in entries]
+    body = b"".join(joined_entries)
+    content = b"tree " + encode(str(len(body))) + NULL + body
+    tree_hash = hash_data(content)
+    dir_name, file_name = get_dir_and_file_names_from_hash(tree_hash)
+    object_dir = Path(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}")
+    object_dir.mkdir(exist_ok=True)
+    tree_hashes[subdir] = tree_hash
+    with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{file_name}", "wb+") as tree_file:
+        tree_file.write(content)
 
 
 def parse_body(body):
@@ -90,6 +124,10 @@ def parse_body(body):
 
 def decode(b):
     return b.decode(UTF8)
+
+
+def encode(s):
+    return s.encode(UTF8)
 
 
 def hash_and_compress_file(file_name):
