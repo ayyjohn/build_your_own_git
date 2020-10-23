@@ -27,7 +27,6 @@ def main():
             file_header = file_header.decode("utf-8")
             file_body = file_body.decode("utf-8")
             print(file_body, end="")
-
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
