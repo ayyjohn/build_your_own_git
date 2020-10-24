@@ -21,13 +21,14 @@ def main():
         create_head_file()
         print("Initialized git directory")
     elif command == "cat-file":
-        # format is `git catfile -p 0a5e5a61944bc3228ba609690585a9b52b1e31b7`
+        # format is `git cat-file -p 0a5e5a61944bc3228ba609690585a9b52b1e31b7`
         # thus argv[2] will always be "-p" for now
         blob_hash = sys.argv[3]
         # first 2 chars are directory, rest is file_name
         dir_name, file_name = get_dir_and_file_names_from_hash(blob_hash)
         with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{file_name}", "rb") as f:
             file_contents = zlib.decompress(f.read())
+            # debug_print(file_contents)
             file_header, file_body = file_contents.split(NULL)
             decoded_file_header = decode(file_header)
             decoded_file_body = decode(file_body)
@@ -60,11 +61,12 @@ def main():
         dir_name, file_name = get_dir_and_file_names_from_hash(tree_sha)
         with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{file_name}", "rb") as tree_file:
             contents = zlib.decompress(tree_file.read())
+            # debug_print(contents)
             headers, body = contents.split(NULL, 1)
             file_info = parse_body(body)
             # sort by name
             for mode, name, sha in sorted(file_info, key=lambda x: x[1]):
-                print(name)
+                print(mode, name, sha)
     elif command == "write-tree":
         tree_hash = write_tree(ROOT_PATH, ROOT_PATH, {})
         print(tree_hash)
@@ -81,14 +83,14 @@ def write_tree(current_path, root_path, tree_hashes):
         if ".git" in dir:
             continue
         write_tree(subdir + os.sep + dir, root_path, tree_hashes)
-        dir_mode = os.stat(subdir + os.sep + dir).st_mode
+        dir_mode = oct(os.stat(subdir + os.sep + dir).st_mode)[2:]
         tree_hash = tree_hashes[subdir + os.sep + dir]
         entry = (encode(str(dir_mode)), encode(dir), tree_hash)
         entries.append(entry)
     for file_name in files:
         file_path = subdir + os.sep + file_name
         blob_hash, compressed_data = hash_and_compress_file(file_path)
-        file_mode = os.stat(file_path).st_mode
+        file_mode = oct(os.stat(file_path).st_mode)[2:]
         entry = (encode(str(file_mode)), encode(file_name), blob_hash.digest())
         entries.append(entry)
     joined_entries = [mode + b" " + name + NULL + sha for mode, name, sha in entries]
@@ -99,6 +101,7 @@ def write_tree(current_path, root_path, tree_hashes):
     object_dir = Path(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}")
     object_dir.mkdir(exist_ok=True)
     tree_hashes[subdir] = tree_hash.digest()
+    # debug_print(content)
     with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{file_name}", "wb+") as tree_file:
         tree_file.write(zlib.compress(content))
     return tree_hash.hexdigest()
@@ -111,6 +114,7 @@ def parse_body(body):
     where the hash is always 20 bytes
     """
     entries = []
+    # debug_print(body)
     while body:
         first_space_index = body.index(b" ")
         first_null_index = body.index(NULL)
@@ -121,6 +125,7 @@ def parse_body(body):
         entry = (decode(mode), decode(name), sha.hex())
         entries.append(entry)
         body = body[end_of_sha_index:]
+    # debug_print(entries)
     return entries
 
 
@@ -161,6 +166,10 @@ def create_git_dirs():
 def create_head_file():
     with open(HEAD_FILE, "w") as f:
         f.write("ref: refs/heads/master\n")
+
+
+def debug_print(x):
+    print(x)
 
 
 if __name__ == "__main__":
