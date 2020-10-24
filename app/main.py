@@ -66,7 +66,8 @@ def main():
             file_info = parse_body(body)
             # sort by name
             for mode, name, sha in sorted(file_info, key=lambda x: x[1]):
-                print(mode, name, sha)
+                # debug_print(mode, name, sha)
+                print(name)
     elif command == "write-tree":
         tree_hash = write_tree(ROOT_PATH, ROOT_PATH, {})
         print(tree_hash)
