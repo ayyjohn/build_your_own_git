@@ -48,15 +48,6 @@ def main():
     elif command == "ls-tree":
         # format is `git ls-tree --name-only <tree_sha>`
         # thus argv[2] will always be "--name-only" for now
-        """
-        output should get just the names from this
-        100644 blob c18dd8d83ceed1806b50b0aaa46beb7e335fff13    .gitignore
-        100644 blob 4be0fbf52cf36629e048c5cb692d57231df07f14    README.md
-        040000 tree 4742c33faa9e076e80313be7b4f3bfd42e5a60b9    app
-        100644 blob a7343766b507bf56012c2bfbc9f0e1601013be6a    codecrafters.yml
-        100755 blob 79eae6a5419dca2d5494200c12143638e9ecb393    your_git.sh
-
-        """
         tree_sha = sys.argv[3]
         dir_name, file_name = get_dir_and_file_names_from_hash(tree_sha)
         with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{file_name}", "rb") as tree_file:
