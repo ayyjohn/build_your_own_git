@@ -55,37 +55,37 @@ def main():
             # debug_print(contents)
             headers, body = contents.split(NULL, 1)
             file_info = parse_body(body)
-            # sort by name
             for mode, name, sha in file_info:
                 # debug_print(mode, name, sha)
                 print(name)
     elif command == "write-tree":
-        tree_hash = write_tree(ROOT_PATH, ROOT_PATH, {})
+        tree_hash = write_tree(ROOT_PATH, {})
         print(tree_hash)
         # format is `git write-tree`
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
 
-def write_tree(current_path, root_path, tree_hashes):
-    # let's start by assuming there's exactly one file in the current dir
+def write_tree(current_path, tree_hashes):
     subdir, dirs, files = next(os.walk(current_path))
     entries = []
     for dir in dirs:
         if ".git" in dir:
             continue
-        write_tree(subdir + os.sep + dir, root_path, tree_hashes)
-        dir_mode = oct(os.stat(subdir + os.sep + dir).st_mode)[2:]
-        tree_hash = tree_hashes[subdir + os.sep + dir]
+        dir_path = subdir + os.sep + dir
+        # recurse first if any subdirs exist
+        write_tree(dir_path, tree_hashes)
+        dir_mode = mode(dir_path)
+        tree_hash = tree_hashes[dir_path]
         entry = (encode(str(dir_mode)), encode(dir), tree_hash)
         entries.append(entry)
     for file_name in files:
         file_path = subdir + os.sep + file_name
         blob_hash, compressed_data = hash_and_compress_file(file_path)
-        file_mode = oct(os.stat(file_path).st_mode)[2:]
+        file_mode = mode(file_path)
         entry = (encode(str(file_mode)), encode(file_name), blob_hash.digest())
         entries.append(entry)
-    entries.sort(key=lambda x: x[1])
+    entries.sort(key=lambda x: x[1])  # sort entries by name
     joined_entries = [mode + b" " + name + NULL + sha for mode, name, sha in entries]
     body = b"".join(joined_entries)
     content = b"tree " + encode(str(len(body))) + NULL + body
@@ -120,6 +120,10 @@ def parse_body(body):
         body = body[end_of_sha_index:]
     # debug_print(entries)
     return entries
+
+
+def mode(file_path):
+    return oct(os.stat(file_path).st_mode)[2:]
 
 
 def decode(b):
