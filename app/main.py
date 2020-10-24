@@ -1,6 +1,7 @@
 import hashlib
 import os
 import sys
+import time
 import zlib
 from pathlib import Path
 
@@ -54,14 +55,26 @@ def main():
             contents = zlib.decompress(tree_file.read())
             # debug_print(contents)
             headers, body = contents.split(NULL, 1)
-            file_info = parse_body(body)
-            for mode, name, sha in file_info:
+            files_info = parse_tree_body(body)
+            for mode, name, sha in files_info:
                 # debug_print(mode, name, sha)
                 print(name)
     elif command == "write-tree":
+        # format is `git write-tree`
         tree_hash = write_tree(ROOT_PATH, {})
         print(tree_hash)
-        # format is `git write-tree`
+    elif command == "commit-tree":
+        # format is `./your_git.sh commit-tree <tree_sha> -p <commit_sha> -m <message>
+        tree_sha, parent_commit_sha, message = sys.argv[2], sys.argv[4], sys.argv[6]
+        commit_body = create_commit_body(tree_sha, parent_commit_sha, message)
+        contents = b"commit " + encode(str(len(commit_body))) + NULL + encode(commit_body)
+        commit_sha = hash_data(contents).hexdigest()
+        dir_name, file_name = get_dir_and_file_names_from_hash(commit_sha)
+        object_dir = Path(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}")
+        object_dir.mkdir(exist_ok=True)
+        with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{file_name}", "wb+") as commit_file:
+            commit_file.write(zlib.compress(contents))
+        print(commit_sha)
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
@@ -100,7 +113,7 @@ def write_tree(current_path, tree_hashes):
     return tree_hash.hexdigest()
 
 
-def parse_body(body):
+def parse_tree_body(body):
     """
     body is of the form
     {mode} {name}\x00{hash}{mode} {name}\x00{hash}{mode} {name}\x00{hash}{mode}...
@@ -120,6 +133,23 @@ def parse_body(body):
         body = body[end_of_sha_index:]
     # debug_print(entries)
     return entries
+
+
+def create_commit_body(tree_sha, parent_sha, message):
+    """
+    example: (added my own newlines)
+    b'commit 250\x00tree 82374f9c56b35a2d97aba4d79573fad1919a5db2\nparent 89e61fe19223c58bf848cbe4d420158520cf11da\n
+    author Alec Johnson <alecjohnson55@gmail.com> 1603500811 -0700\ncommitter Alec Johnson <alecjohnson55@gmail.com> 1603500811 -0700\n\n
+    switch back to just names\n'
+
+    body is of the form
+    tree {tree_sha}\nparent {parent_sha}\nauthor {author info}\ncommitter {committer info} {timestamp} {timezone?}\n\n{commit message}\n
+    """
+    now = int(time.time())
+    # todo fix -0700?
+    # todo is \n part of message or nah
+    body = f"tree {tree_sha}\nparent {parent_sha}\nauthor Alec Johnson <alecjohnson55@gmail.com> {now} -0700\ncommitter Alec Johnson <alecjohnson55@gmail.com> {now} -0700\n\n{message}\n"
+    return body
 
 
 def mode(file_path):
