@@ -65,7 +65,7 @@ def main():
             headers, body = contents.split(NULL, 1)
             file_info = parse_body(body)
             # sort by name
-            for mode, name, sha in sorted(file_info, key=lambda x: x[1]):
+            for mode, name, sha in file_info:
                 # debug_print(mode, name, sha)
                 print(name)
     elif command == "write-tree":
@@ -94,6 +94,7 @@ def write_tree(current_path, root_path, tree_hashes):
         file_mode = oct(os.stat(file_path).st_mode)[2:]
         entry = (encode(str(file_mode)), encode(file_name), blob_hash.digest())
         entries.append(entry)
+    entries.sort(key=lambda x: x[1])
     joined_entries = [mode + b" " + name + NULL + sha for mode, name, sha in entries]
     body = b"".join(joined_entries)
     content = b"tree " + encode(str(len(body))) + NULL + body
