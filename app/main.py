@@ -75,6 +75,14 @@ def main():
         with open(f"{ROOT_PATH}/{OBJECTS_DIR}/{dir_name}/{file_name}", "wb+") as commit_file:
             commit_file.write(zlib.compress(contents))
         print(commit_sha)
+    elif command == "clone":
+        # format is `./your_git.sh clone https://github.com/blah/blah <some_dir>`
+        git_url, destination_dir = sys.argv[2], sys.argv[3]
+        destination_dir = Path(f"{ROOT_PATH}/{destination_dir}")
+        destination_dir.mkdir(exist_ok=True)
+        git_dir = Path(f"{ROOT_PATH}/{destination_dir}/{GIT_DIR}")
+        git_dir.mkdir(exist_ok=True)
+
     else:
         raise RuntimeError(f"Unknown command #{command}")
 
