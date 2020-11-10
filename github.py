@@ -1,14 +1,41 @@
+from collections import deque
+
 import requests
 
-# curl -X GET -o - https://github.com/git/git.git/info/refs?service=git-upload-pack | head -n 5
-url = "https://github.com/git/git.git/info/refs?service=git-upload-pack"
-# url = "https://github.com/ayyjohn/build_your_own_git.git/info/refs?service=git-receive-pack"
-response = requests.get(url)
-# print(response.content.decode("utf-8"))
-# print(response.content)
-for line in response.content.decode("utf-8").split("\n"):
-    print(line)
+STOP = "0000"
 
-# url = "https://github.com/ayyjohn/build_your_own_git.git/objects/00/3da8278d32b91b7485daef3346d5e0d009e1a9da0a"
-# response = requests.get(url)
-# print(respons.content)
+# curl -X GET -o - https://github.com/git/git.git/info/refs?service=git-upload-pack | head -n 5
+# this one works if uncommented
+discover_url = "https://github.com/ayyjohn/book_info.git/info/refs?service=git-upload-pack"
+index_response = requests.get(discover_url).content.decode("utf-8").split("\n")
+print(index_response)
+print()
+
+# objects start at 3rd line and go until '0000' is found
+objects = index_response[2:]
+advertised = set()
+# common = set()
+# want = set()
+for i, line in enumerate(objects):
+    if line == STOP:
+        break
+    object_hash, name = line.split()
+    advertised.add(object_hash)
+
+print(advertised)
+print()
+
+
+LINE_START = b"0032want "
+
+repo_url = "https://github.com/ayyjohn/book_info.git/git-upload-pack"
+main_hash = next(iter(advertised)).encode("utf-8")[4:]
+headers = {"Content-type": "application/x-git-upload-pack-request"}
+data = LINE_START + main_hash + b"\n"
+data += b"0000"
+data += b"0009done\n"
+print(f"request body: {data}")
+response = requests.post(url=repo_url, data=data, headers=headers)
+split_resp = response.content.split(b"\n")
+print(split_resp)
+# print(packfile.decode("utf-8"))
